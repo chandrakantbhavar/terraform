@@ -96,6 +96,52 @@ func TestAccAWSWafIPSet_changeNameForceNew(t *testing.T) {
 	})
 }
 
+func TestAccAWSWafIPSet_changeDescriptors(t *testing.T) {
+	var before, after waf.IPSet
+	ipsetName := fmt.Sprintf("ip-set-%s", acctest.RandString(5))
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSWafIPSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccAWSWafIPSetConfig(ipsetName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckAWSWafIPSetExists("aws_waf_ipset.ipset", &before),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "name", ipsetName),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.#", "1"),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.4037960608.type", "IPV4"),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.4037960608.value", "192.0.7.0/24"),
+				),
+			},
+			{
+				Config: testAccAWSWafIPSetConfigChangeIPSetDescriptors(ipsetName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					testAccCheckAWSWafIPSetExists("aws_waf_ipset.ipset", &after),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "name", ipsetName),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.#", "1"),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.115741513.type", "IPV4"),
+					resource.TestCheckResourceAttr(
+						"aws_waf_ipset.ipset", "ip_set_descriptors.115741513.value", "192.0.8.0/24"),
+				),
+			},
+		},
+	})
+}
+
+func TestDiffDescriptors(t *testing.T) {
+	// TODO
+	t.Fatal("NOT IMPLEMENTED")
+}
+
 func testAccCheckAWSWafIPSetDisappears(v *waf.IPSet) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		conn := testAccProvider.Meta().(*AWSClient).wafconn
